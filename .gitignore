@@ -1,0 +1,18 @@
+﻿# Ambiente virtual e caches do Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Dados grandes (grafos gerados) ficam fora do repositório
+dados/*
+!dados/.gitkeep
+
+# Lixo do Spark
+spark-warehouse/
+metastore_db/
+derby.log
+
+# Saídas de jobs Slurm
+slurm-*.out
+*.log
