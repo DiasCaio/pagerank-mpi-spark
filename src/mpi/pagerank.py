@@ -32,6 +32,7 @@ from mpi4py import MPI
 
 from src.comum.grafo import carregar_grafo
 from src.comum.relatorio import linhas_do_top, porcentagem
+from src.comum.resultados import registrar
 from src.sequencial.pagerank import (
     AMORTECIMENTO,
     MAX_ITERACOES,
@@ -124,10 +125,13 @@ def main() -> None:
     parser.add_argument("--top", type=int, default=5, help="quantas páginas mostrar no ranking")
     parser.add_argument("--salvar-ranks", type=str, default=None,
                         help="arquivo .npy para guardar o vetor final (usado nos testes)")
+    parser.add_argument("--csv", type=str, default=None, help="planilha onde anotar os tempos")
+    parser.add_argument("--variante", type=str, default="base", help="rótulo da alteração testada")
     args = parser.parse_args()
 
     comm = MPI.COMM_WORLD
     eu = comm.Get_rank()
+    inicio_programa = MPI.Wtime()
 
     # só o rank 0 lê o arquivo; os outros recebem a sua parte pela rede
     inicio = MPI.Wtime()
@@ -147,10 +151,12 @@ def main() -> None:
     rank, iteracoes = pagerank_mpi(comm, n_vertices, origens, destinos, grau,
                                    args.amortecimento, args.tolerancia, args.max_iteracoes)
     tempo_calculo = MPI.Wtime() - inicio
+    tempo_total = MPI.Wtime() - inicio_programa
 
     # o tempo que vale é o do processo mais lento
     tempo_distribuicao = comm.reduce(tempo_distribuicao, op=MPI.MAX, root=0)
     tempo_calculo = comm.reduce(tempo_calculo, op=MPI.MAX, root=0)
+    tempo_total = comm.reduce(tempo_total, op=MPI.MAX, root=0)
     # confere que nenhuma aresta se perdeu na divisão
     total_arestas = comm.reduce(len(origens), op=MPI.SUM, root=0)
 
@@ -168,6 +174,11 @@ def main() -> None:
 
     if args.salvar_ranks:
         np.save(args.salvar_ranks, rank)
+    if args.csv:
+        registrar(args.csv, versao="mpi", variante=args.variante, processos=comm.Get_size(),
+                  vertices=n_vertices, arestas=total_arestas, iteracoes=iteracoes,
+                  tempo_leitura=tempo_leitura, tempo_distribuicao=tempo_distribuicao,
+                  tempo_calculo=tempo_calculo, tempo_total=tempo_total)
 
 
 if __name__ == "__main__":

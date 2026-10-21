@@ -31,14 +31,18 @@ from pyspark.sql import functions as F
 
 from src.comum.grafo import carregar_grafo
 from src.comum.relatorio import linhas_do_top, porcentagem
+from src.comum.resultados import registrar
 from src.sequencial.pagerank import AMORTECIMENTO, MAX_ITERACOES, TOLERANCIA
 
 
-def criar_sessao(master=None):
+def criar_sessao(master=None, nucleos=None):
     """Abre a conexão com o Spark. Sem master, usa o que o spark-submit passar (ou local)."""
     construtor = SparkSession.builder.appName("pagerank")
     if master:
         construtor = construtor.master(master)
+    if nucleos:
+        # no cluster, limita quantos núcleos o programa pode pegar no total
+        construtor = construtor.config("spark.cores.max", str(nucleos))
     # Arrow acelera a passagem de tabelas entre o Python e o Spark (que roda em Java)
     construtor = construtor.config("spark.sql.execution.arrow.pyspark.enabled", "true")
     # tira a barra de progresso "[Stage 0:> ...]" do terminal
@@ -148,11 +152,16 @@ def main() -> None:
                         help="pedaços de cada tabela; o padrão é o número de núcleos")
     parser.add_argument("--salvar-ranks", type=str, default=None,
                         help="arquivo .npy para guardar o vetor final")
+    parser.add_argument("--nucleos", type=int, default=None,
+                        help="limite de núcleos no cluster (no modo local use local[N] no --master)")
+    parser.add_argument("--csv", type=str, default=None, help="planilha onde anotar os tempos")
+    parser.add_argument("--variante", type=str, default="base", help="rótulo da alteração testada")
     args = parser.parse_args()
+    inicio_programa = time.perf_counter()
 
-    spark = criar_sessao(args.master)
+    spark = criar_sessao(args.master, args.nucleos)
     # defaultParallelism = total de núcleos que o Spark recebeu
-    nucleos = spark.sparkContext.defaultParallelism
+    nucleos = args.nucleos or spark.sparkContext.defaultParallelism
     particoes = args.particoes or nucleos
 
     inicio = time.perf_counter()
@@ -167,6 +176,7 @@ def main() -> None:
     ranks, iteracoes = pagerank_spark(arestas, vertices, sem_saida, grafo.n_vertices,
                                       args.amortecimento, args.tolerancia, args.max_iteracoes)
     tempo_calculo = time.perf_counter() - inicio
+    tempo_total = time.perf_counter() - inicio_programa
 
     rank = para_numpy(ranks)
 
@@ -181,6 +191,12 @@ def main() -> None:
 
     if args.salvar_ranks:
         np.save(args.salvar_ranks, rank)
+    if args.csv:
+        registrar(args.csv, versao="spark", variante=args.variante, processos=nucleos,
+                  particoes=particoes, vertices=grafo.n_vertices, arestas=grafo.n_arestas,
+                  iteracoes=iteracoes, tempo_leitura=tempo_leitura,
+                  tempo_distribuicao=tempo_distribuicao, tempo_calculo=tempo_calculo,
+                  tempo_total=tempo_total)
     spark.stop()
 
 

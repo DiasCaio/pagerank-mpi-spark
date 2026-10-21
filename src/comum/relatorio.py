@@ -8,6 +8,11 @@ def porcentagem(valor, casas=4):
     return f"{valor * 100:.{casas}f}".replace(".", ",") + "%"
 
 
+def decimal(valor, casas=2):
+    """6.5291 -> '6,53' (vírgula como separador decimal)."""
+    return f"{valor:.{casas}f}".replace(".", ",")
+
+
 def numero(valor):
     """1601.5 -> '1.602' e 1.25 -> '1,2' (abaixo de 10 mostra uma casa decimal)."""
     if valor < 10:

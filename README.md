@@ -40,3 +40,22 @@ Todos os comandos são rodados a partir da raiz do projeto.
 
    No cluster, troque o `--master` pelo endereço do mestre do Spark
    (ex.: `spark://<ip-do-mestre>:7077`).
+
+## Como medir
+O rodador executa uma versão várias vezes (3 por padrão), com 1, 2, 4...
+processos e 50 iterações fixas, e anota cada execução em
+`resultados/medicoes.csv`:
+
+    python -m src.medicao.rodar --versao sequencial --grafo dados/grafo_1m.npz
+    python -m src.medicao.rodar --versao mpi --grafo dados/grafo_1m.npz --processos 1 2 4 8
+    python -m src.medicao.rodar --versao spark --grafo dados/grafo_1m.npz --processos 1 2 4 8
+
+No cluster, use `--mpi-extra "--hostfile hosts --oversubscribe"` no MPI e
+`--master spark://<ip-do-mestre>:7077` no Spark.
+
+Depois, o analisador calcula tempo médio, speedup e eficiência:
+
+    python -m src.medicao.analisar
+
+- speedup = tempo com 1 processo ÷ tempo com p processos
+- eficiência = speedup ÷ p (100% = cada processo rende o máximo possível)

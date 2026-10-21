@@ -20,6 +20,7 @@ import numpy as np
 
 from src.comum.grafo import carregar_grafo
 from src.comum.relatorio import linhas_do_top, porcentagem
+from src.comum.resultados import registrar
 
 AMORTECIMENTO = 0.85
 TOLERANCIA = 1e-10
@@ -86,7 +87,10 @@ def main() -> None:
                         help="critério de parada; 0 roda todas as iterações")
     parser.add_argument("--max-iteracoes", type=int, default=MAX_ITERACOES)
     parser.add_argument("--top", type=int, default=5, help="quantas páginas mostrar no ranking")
+    parser.add_argument("--csv", type=str, default=None, help="planilha onde anotar os tempos")
+    parser.add_argument("--variante", type=str, default="base", help="rótulo da alteração testada")
     args = parser.parse_args()
+    inicio_programa = time.perf_counter()
 
     inicio = time.perf_counter()
     grafo = carregar_grafo(args.grafo)
@@ -95,6 +99,13 @@ def main() -> None:
     inicio = time.perf_counter()
     rank, iteracoes = pagerank(grafo, args.amortecimento, args.tolerancia, args.max_iteracoes)
     tempo_calculo = time.perf_counter() - inicio
+    tempo_total = time.perf_counter() - inicio_programa
+
+    if args.csv:
+        registrar(args.csv, versao="sequencial", variante=args.variante, processos=1,
+                  vertices=grafo.n_vertices, arestas=grafo.n_arestas, iteracoes=iteracoes,
+                  tempo_leitura=tempo_leitura, tempo_distribuicao=0.0,
+                  tempo_calculo=tempo_calculo, tempo_total=tempo_total)
 
     print(f"Grafo: {grafo.n_vertices} vértices, {grafo.n_arestas} arestas")
     print(f"  iterações: {iteracoes}")
