@@ -33,3 +33,10 @@ Todos os comandos são rodados a partir da raiz do projeto.
 
    O `-m mpi4py` encerra todos os processos se um deles der erro, em vez
    de deixar os outros travados esperando.
+
+4. PageRank com Spark (4 núcleos desta máquina):
+
+       python -m src.spark.pagerank --grafo dados/grafo_100k.npz --master "local[4]"
+
+   No cluster, troque o `--master` pelo endereço do mestre do Spark
+   (ex.: `spark://<ip-do-mestre>:7077`).
