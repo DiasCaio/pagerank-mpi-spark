@@ -47,6 +47,22 @@ def test_resumo_calcula_speedup_e_eficiencia():
     assert resumo.loc[4, "eficiencia"] == pytest.approx(0.5)
 
 
+def test_graficos_saem_um_por_versao_e_grafo(tmp_path):
+    pytest.importorskip("matplotlib")
+    from src.medicao.graficos import gerar
+
+    linhas = []
+    for versao, variante, processos, tempo in [
+        ("mpi", "base", 1, 8.0), ("mpi", "base", 2, 5.0), ("mpi", "otimizada", 1, 6.0),
+        ("mpi", "otimizada", 2, 3.0), ("spark", "base", 1, 50.0), ("spark", "alteracao3", 1, 300.0),
+    ]:
+        linhas.append(dict(versao=versao, variante=variante, vertices=1000, arestas=9000,
+                           iteracoes=50, processos=processos, tempo_calculo=tempo))
+    arquivos = gerar(pd.DataFrame(linhas), str(tmp_path / "graficos"))
+    assert sorted(Path(a).name for a in arquivos) == ["mpi_1000_paginas.png", "spark_1000_paginas.png"]
+    assert all(Path(a).stat().st_size > 10_000 for a in arquivos)
+
+
 def test_resumo_sem_medicao_com_um_processo_deixa_speedup_vazio():
     caso = dict(versao="spark", variante="base", vertices=10, arestas=20, iteracoes=5)
     resumo = resumir(pd.DataFrame([{**caso, "processos": 2, "tempo_calculo": 3.0}]))

@@ -60,6 +60,13 @@ Depois, o analisador calcula tempo médio, speedup e eficiência:
 - speedup = tempo com 1 processo ÷ tempo com p processos
 - eficiência = speedup ÷ p (100% = cada processo rende o máximo possível)
 
+E os gráficos (tempo, speedup e eficiência; uma figura por versão e
+tamanho de grafo, com todas as variantes juntas):
+
+    python -m src.medicao.graficos
+
+As figuras ficam em `resultados/graficos/`.
+
 ## Alterações de desempenho
 As versões originais (`src/mpi/pagerank.py` e `src/spark/pagerank.py`)
 não mudam. As alterações ficam em `pagerank_alterado.py`, escolhidas com
