@@ -31,6 +31,7 @@ import numpy as np
 from mpi4py import MPI
 
 from src.comum.grafo import carregar_grafo
+from src.comum.relatorio import linhas_do_top, porcentagem
 from src.sequencial.pagerank import (
     AMORTECIMENTO,
     MAX_ITERACOES,
@@ -159,15 +160,11 @@ def main() -> None:
     print(f"Grafo: {n_vertices} vértices, {total_arestas} arestas")
     print(f"  processos: {comm.Get_size()}")
     print(f"  iterações: {iteracoes}")
-    print(f"  soma dos ranks: {rank.sum():.6f}")
+    print(f"  soma das chances: {porcentagem(rank.sum())}")
     print(f"  tempo de leitura: {tempo_leitura:.3f} s")
     print(f"  tempo de distribuição: {tempo_distribuicao:.3f} s")
     print(f"  tempo de cálculo: {tempo_calculo:.3f} s")
-
-    melhores = np.argsort(rank)[::-1][: args.top]
-    print(f"Top {args.top} páginas:")
-    for posicao, pagina in enumerate(melhores, start=1):
-        print(f"  {posicao}. página {pagina}: {rank[pagina]:.6e}")
+    print("\n".join(linhas_do_top(rank, args.top)))
 
     if args.salvar_ranks:
         np.save(args.salvar_ranks, rank)

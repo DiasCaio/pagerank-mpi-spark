@@ -19,6 +19,7 @@ import time
 import numpy as np
 
 from src.comum.grafo import carregar_grafo
+from src.comum.relatorio import linhas_do_top, porcentagem
 
 AMORTECIMENTO = 0.85
 TOLERANCIA = 1e-10
@@ -97,15 +98,11 @@ def main() -> None:
 
     print(f"Grafo: {grafo.n_vertices} vértices, {grafo.n_arestas} arestas")
     print(f"  iterações: {iteracoes}")
-    print(f"  soma dos ranks: {rank.sum():.6f}")
+    # as chances de todas as páginas juntas precisam dar 100%
+    print(f"  soma das chances: {porcentagem(rank.sum())}")
     print(f"  tempo de leitura: {tempo_leitura:.3f} s")
     print(f"  tempo de cálculo: {tempo_calculo:.3f} s")
-
-    # argsort ordena do menor para o maior; [::-1] inverte para o maior primeiro
-    melhores = np.argsort(rank)[::-1][: args.top]
-    print(f"Top {args.top} páginas:")
-    for posicao, pagina in enumerate(melhores, start=1):
-        print(f"  {posicao}. página {pagina}: {rank[pagina]:.6e}")
+    print("\n".join(linhas_do_top(rank, args.top)))
 
 
 if __name__ == "__main__":
