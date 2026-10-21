@@ -26,3 +26,10 @@ Todos os comandos são rodados a partir da raiz do projeto.
 
    Com `--tolerancia 0 --max-iteracoes 50` ele roda sempre 50 iterações,
    o que deixa as medições de tempo comparáveis entre as versões.
+
+3. PageRank com MPI (4 processos):
+
+       mpirun -n 4 python -m mpi4py -m src.mpi.pagerank --grafo dados/grafo_100k.npz
+
+   O `-m mpi4py` encerra todos os processos se um deles der erro, em vez
+   de deixar os outros travados esperando.

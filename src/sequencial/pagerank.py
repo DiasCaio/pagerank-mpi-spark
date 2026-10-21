@@ -32,8 +32,11 @@ def somar_contribuicoes(origens, destinos, rank, grau_saida, n_vertices):
     """
     # parte da nota que viaja por cada link
     por_link = rank[origens] / grau_saida[origens]
-    # bincount com pesos soma todos os valores que chegam no mesmo destino
-    return np.bincount(destinos, weights=por_link, minlength=n_vertices)
+    # bincount com pesos soma todos os valores que chegam no mesmo destino;
+    # sem nenhuma aresta ele devolve inteiros, então forçamos float64
+    # (no MPI todos os processos precisam mandar o mesmo tipo de dado)
+    recebido = np.bincount(destinos, weights=por_link, minlength=n_vertices)
+    return recebido.astype(np.float64, copy=False)
 
 
 def aplicar_formula(recebido, massa_sem_saida, n_vertices, d):
