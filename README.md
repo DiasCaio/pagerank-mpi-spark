@@ -65,12 +65,17 @@ As versões originais (`src/mpi/pagerank.py` e `src/spark/pagerank.py`)
 não mudam. As alterações ficam em `pagerank_alterado.py`, escolhidas com
 `--alteracao`. Cada uma é medida sozinha contra a original:
 
-| | Área | MPI |
-|---|---|---|
-| 1 | trabalho repetido em cada rodada | peso de cada link calculado uma vez só |
-| 2 | divisão dos dados | cada processo é dono de uma faixa de páginas de destino (Allgatherv) |
-| 3 | formato do envio | `allreduce` com o vetor serializado no lugar do `Allreduce` |
-| otimizada | | 1 e 2 juntas |
+| | Área | MPI | Spark |
+|---|---|---|---|
+| 1 | trabalho repetido em cada rodada | peso de cada link calculado uma vez só | soma das páginas sem saída anotada durante a conta principal (`observe`), sem uma ida extra ao driver |
+| 2 | divisão dos dados | cada processo é dono de uma faixa de páginas de destino (Allgatherv) | links divididos por destino e tabela de notas enviada inteira (broadcast), sem reembaralhar os links |
+| 3 | formato dos dados | `allreduce` com o vetor serializado no lugar do `Allreduce` | RDD de tuplas do Python no lugar de DataFrame |
+| otimizada | | 1 e 2 juntas | 1 e 2 juntas |
 
     mpirun -n 4 python -m mpi4py -m src.mpi.pagerank_alterado --alteracao 2 --grafo dados/grafo_1m.npz
+    python -m src.spark.pagerank_alterado --alteracao 2 --grafo dados/grafo_100k.npz --master "local[4]"
     python -m src.medicao.rodar --versao mpi --alteracao 2 --grafo dados/grafo_1m.npz --processos 1 2 4
+
+As duas versões do Spark usam 4 GB de memória por padrão (o padrão do
+próprio Spark, 1 GB, não comporta o grafo de 1 milhão de páginas). Para
+mudar: `--memoria 8g`, ou `--extra "--memoria 8g"` no rodador.
