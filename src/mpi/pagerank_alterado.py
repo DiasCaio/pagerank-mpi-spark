@@ -82,8 +82,8 @@ def pagerank_por_aresta(comm, n_vertices, origens, destinos, grau,
 
 def distribuir_por_destino(comm, grafo):
     """
-    Alteração 2: o rank 0 ordena os links pela página de destino e entrega
-    a cada processo os links que chegam na faixa de páginas dele.
+    Alteração 2: o rank 0 separa os links pela faixa de páginas de destino
+    e entrega a cada processo os links que chegam nas páginas dele.
     Devolve (n_vertices, origens, destinos já contados a partir do início
     da faixa, grau de saída de todas as páginas, limites das faixas).
     """
@@ -91,11 +91,15 @@ def distribuir_por_destino(comm, grafo):
     origens_ordenadas = destinos_ordenados = None
     info = None
     if eu == 0:
-        # depois de ordenar, os links de cada faixa ficam um ao lado do outro na lista
-        ordem = np.argsort(grafo.destinos, kind="stable")
+        limites, links = dividir_por_destino(grafo.destinos, grafo.n_vertices, comm.Get_size())
+        # faixa[i] = número do processo dono da página de destino do link i
+        faixa = np.searchsorted(limites, grafo.destinos, side="right") - 1
+        # agrupa os links por faixa e, dentro de cada faixa, deixa em ordem de origem;
+        # assim rank[origens] lê a memória em sequência, como na versão original
+        # (lexsort ordena pela última chave e desempata pela anterior)
+        ordem = np.lexsort((grafo.origens, faixa))
         origens_ordenadas = np.ascontiguousarray(grafo.origens[ordem], dtype=np.int64)
         destinos_ordenados = np.ascontiguousarray(grafo.destinos[ordem], dtype=np.int64)
-        limites, links = dividir_por_destino(destinos_ordenados, grafo.n_vertices, comm.Get_size())
         info = (grafo.n_vertices, limites, links)
     n_vertices, limites, links = comm.bcast(info, root=0)
 
