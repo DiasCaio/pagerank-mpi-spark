@@ -35,11 +35,18 @@ from src.comum.resultados import registrar
 from src.sequencial.pagerank import AMORTECIMENTO, MAX_ITERACOES, TOLERANCIA
 
 
-def criar_sessao(master=None, nucleos=None):
+MEMORIA = "4g"
+
+
+def criar_sessao(master=None, nucleos=None, memoria=MEMORIA):
     """Abre a conexão com o Spark. Sem master, usa o que o spark-submit passar (ou local)."""
     construtor = SparkSession.builder.appName("pagerank")
     if master:
         construtor = construtor.master(master)
+    # o padrão do Spark é 1 GB, pouco para o grafo de 10 milhões de links;
+    # driver = o "gerente" (no modo local ele também faz as contas), executor = cada "funcionário"
+    construtor = construtor.config("spark.driver.memory", memoria)
+    construtor = construtor.config("spark.executor.memory", memoria)
     if nucleos:
         # no cluster, limita quantos núcleos o programa pode pegar no total
         construtor = construtor.config("spark.cores.max", str(nucleos))
@@ -154,12 +161,14 @@ def main() -> None:
                         help="arquivo .npy para guardar o vetor final")
     parser.add_argument("--nucleos", type=int, default=None,
                         help="limite de núcleos no cluster (no modo local use local[N] no --master)")
+    parser.add_argument("--memoria", type=str, default=MEMORIA,
+                        help="memória do driver e de cada executor, ex.: 4g")
     parser.add_argument("--csv", type=str, default=None, help="planilha onde anotar os tempos")
     parser.add_argument("--variante", type=str, default="base", help="rótulo da alteração testada")
     args = parser.parse_args()
     inicio_programa = time.perf_counter()
 
-    spark = criar_sessao(args.master, args.nucleos)
+    spark = criar_sessao(args.master, args.nucleos, args.memoria)
     # defaultParallelism = total de núcleos que o Spark recebeu
     nucleos = args.nucleos or spark.sparkContext.defaultParallelism
     particoes = args.particoes or nucleos
