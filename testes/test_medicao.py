@@ -55,8 +55,15 @@ def test_resumo_sem_medicao_com_um_processo_deixa_speedup_vazio():
 
 def opcoes(**mudancas):
     padrao = dict(versao="mpi", grafo="g.npz", iteracoes=50, csv="r.csv", variante="base",
-                  extra="", mpi_extra="", master="local")
+                  extra="", mpi_extra="", master="local", alteracao=None)
     return argparse.Namespace(**{**padrao, **mudancas})
+
+
+def test_comando_com_alteracao_usa_o_arquivo_alterado():
+    comando = montar_comando(opcoes(alteracao="otimizada", variante="otimizada"), 2)
+    assert "src.mpi.pagerank_alterado" in comando
+    assert comando[comando.index("--alteracao") + 1] == "otimizada"
+    assert "src.mpi.pagerank" not in comando
 
 
 def test_comando_mpi_repassa_opcoes_do_mpirun():
@@ -92,3 +99,10 @@ def test_rodador_sequencial_de_ponta_a_ponta(tmp_path):
 def test_rodador_mpi_de_ponta_a_ponta(tmp_path):
     linhas = rodar_medicao(tmp_path, "mpi", "--processos", "1", "2", "--repeticoes", "1")
     assert [linha["processos"] for linha in linhas] == ["1", "2"]
+
+
+@pytest.mark.skipif(shutil.which("mpirun") is None, reason="mpirun não encontrado")
+def test_rodador_anota_o_nome_da_alteracao(tmp_path):
+    linhas = rodar_medicao(tmp_path, "mpi", "--alteracao", "2", "--processos", "2",
+                           "--repeticoes", "1")
+    assert [linha["variante"] for linha in linhas] == ["alteracao2"]

@@ -39,16 +39,22 @@ def montar_comando(args, processos):
     if args.versao == "sequencial":
         return [sys.executable, "-m", "src.sequencial.pagerank", *opcoes]
 
+    # com --alteracao, roda o arquivo das versões alteradas em vez do original
+    modulo = f"src.{args.versao}.pagerank"
+    if args.alteracao:
+        modulo += "_alterado"
+        opcoes += ["--alteracao", args.alteracao]
+
     if args.versao == "mpi":
         return [
             "mpirun", "-n", str(processos), *shlex.split(args.mpi_extra),
-            sys.executable, "-m", "mpi4py", "-m", "src.mpi.pagerank", *opcoes,
+            sys.executable, "-m", "mpi4py", "-m", modulo, *opcoes,
         ]
 
     # Spark: no modo local o número de núcleos vai dentro do próprio master, ex.: local[4]
     if args.master.startswith("local"):
-        return [sys.executable, "-m", "src.spark.pagerank", "--master", f"local[{processos}]", *opcoes]
-    return [sys.executable, "-m", "src.spark.pagerank", "--master", args.master,
+        return [sys.executable, "-m", modulo, "--master", f"local[{processos}]", *opcoes]
+    return [sys.executable, "-m", modulo, "--master", args.master,
             "--nucleos", str(processos), *opcoes]
 
 
@@ -61,7 +67,10 @@ def main() -> None:
     parser.add_argument("--repeticoes", type=int, default=3, help="quantas vezes rodar cada caso")
     parser.add_argument("--iteracoes", type=int, default=50, help="iterações fixas do PageRank")
     parser.add_argument("--csv", type=str, default="resultados/medicoes.csv")
-    parser.add_argument("--variante", type=str, default="base", help="rótulo da alteração testada")
+    parser.add_argument("--alteracao", choices=["1", "2", "3", "otimizada"], default=None,
+                        help="mede uma versão alterada; sem esta opção mede a original")
+    parser.add_argument("--variante", type=str, default=None,
+                        help="rótulo na planilha; o padrão é 'base' ou o nome da alteração")
     parser.add_argument("--extra", type=str, default="",
                         help="opções a mais repassadas ao programa do PageRank")
     parser.add_argument("--mpi-extra", type=str, default="",
@@ -71,6 +80,11 @@ def main() -> None:
     parser.add_argument("--limite", type=int, default=1800,
                         help="segundos máximos por execução; acima disso o caso é abandonado")
     args = parser.parse_args()
+    if args.alteracao and args.versao == "sequencial":
+        parser.error("as alterações existem só para mpi e spark")
+    if args.variante is None:
+        args.variante = "otimizada" if args.alteracao == "otimizada" else (
+            f"alteracao{args.alteracao}" if args.alteracao else "base")
 
     # a versão sequencial só existe com 1 processo
     lista_de_processos = [1] if args.versao == "sequencial" else args.processos

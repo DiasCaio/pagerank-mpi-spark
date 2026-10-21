@@ -59,3 +59,18 @@ Depois, o analisador calcula tempo médio, speedup e eficiência:
 
 - speedup = tempo com 1 processo ÷ tempo com p processos
 - eficiência = speedup ÷ p (100% = cada processo rende o máximo possível)
+
+## Alterações de desempenho
+As versões originais (`src/mpi/pagerank.py` e `src/spark/pagerank.py`)
+não mudam. As alterações ficam em `pagerank_alterado.py`, escolhidas com
+`--alteracao`. Cada uma é medida sozinha contra a original:
+
+| | Área | MPI |
+|---|---|---|
+| 1 | trabalho repetido em cada rodada | peso de cada link calculado uma vez só |
+| 2 | divisão dos dados | cada processo é dono de uma faixa de páginas de destino (Allgatherv) |
+| 3 | formato do envio | `allreduce` com o vetor serializado no lugar do `Allreduce` |
+| otimizada | | 1 e 2 juntas |
+
+    mpirun -n 4 python -m mpi4py -m src.mpi.pagerank_alterado --alteracao 2 --grafo dados/grafo_1m.npz
+    python -m src.medicao.rodar --versao mpi --alteracao 2 --grafo dados/grafo_1m.npz --processos 1 2 4
