@@ -9,6 +9,9 @@
 set -e
 
 PASTA_VENV="${PASTA_VENV:-$HOME/grupo_pagerank/venv}"
+# a conta do cluster aponta SPARK_HOME para outra versão do Spark (instalada pelo
+# professor); sem isto o nosso pyspark tentaria usá-la e as versões não se entendem
+unset SPARK_HOME
 
 echo "== processador (para o relatório)"
 lscpu | grep -E "Model name|^CPU\(s\)|Thread\(s\) per core|Core\(s\) per socket|Socket\(s\)"

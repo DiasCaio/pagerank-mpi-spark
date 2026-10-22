@@ -86,6 +86,11 @@ versão para estimar a duração das medições:
 
 O `nohup ... &` mantém o script rodando mesmo se a conexão cair.
 
+Atenção: a conta do cluster define `SPARK_HOME` apontando para o Spark
+4.0.1 instalado lá, e o nosso pyspark (4.2.0) tentaria usá-lo. Os scripts
+já fazem `unset SPARK_HOME`; ao rodar comandos à mão, faça o mesmo antes
+(vale só para o terminal aberto; não altere o `.bashrc`, que é compartilhado).
+
 ## Alterações de desempenho
 As versões originais (`src/mpi/pagerank.py` e `src/spark/pagerank.py`)
 não mudam. As alterações ficam em `pagerank_alterado.py`, escolhidas com

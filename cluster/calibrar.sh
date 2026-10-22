@@ -9,6 +9,9 @@
 
 PASTA_VENV="${PASTA_VENV:-$HOME/grupo_pagerank/venv}"
 source "$PASTA_VENV/bin/activate"
+# a conta do cluster aponta SPARK_HOME para outra versão do Spark (instalada pelo
+# professor); sem isto o nosso pyspark tentaria usá-la e as versões não se entendem
+unset SPARK_HOME
 
 CSV=resultados/calibracao.csv
 GRAFO=dados/grafo_1m.npz
