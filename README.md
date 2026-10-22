@@ -67,6 +67,25 @@ tamanho de grafo, com todas as variantes juntas):
 
 As figuras ficam em `resultados/graficos/`.
 
+## No cluster
+As medições foram feitas num nó só (n-11, 32 núcleos), com o MPI dentro do
+nó e o Spark em modo local. A pasta pessoal do cluster é compartilhada
+entre grupos, então tudo fica em `~/grupo_pagerank`:
+
+    mkdir -p ~/grupo_pagerank && cd ~/grupo_pagerank
+    git clone -b feat/pagerank https://github.com/DiasCaio/pagerank-mpi-spark.git
+    cd pagerank-mpi-spark
+    bash cluster/preparar.sh
+
+`preparar.sh` cria o ambiente Python, instala as dependências, gera os
+grafos e roda os testes. `calibrar.sh` faz uma execução curta de cada
+versão para estimar a duração das medições:
+
+    nohup bash cluster/calibrar.sh > calibracao.log 2>&1 &
+    tail -f calibracao.log
+
+O `nohup ... &` mantém o script rodando mesmo se a conexão cair.
+
 ## Alterações de desempenho
 As versões originais (`src/mpi/pagerank.py` e `src/spark/pagerank.py`)
 não mudam. As alterações ficam em `pagerank_alterado.py`, escolhidas com
